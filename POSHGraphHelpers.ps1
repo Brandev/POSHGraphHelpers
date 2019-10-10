@@ -64,7 +64,6 @@ function New-GraphAPICertificate {
         Write-Error $_.Exception
     }
 }
-
 function Get-ClientCertificate {
     <#
 	.SYNOPSIS
