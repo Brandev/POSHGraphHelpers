@@ -1,21 +1,46 @@
 # PowerShell Helper for Microsoft Graph API 
 
-## **Setup**
-#### App Registration
+## **App Registration & Configuration**
 https://docs.microsoft.com/en-us/graph/auth-register-app-v2
 
+1. Provide a name for the application. I used **GraphAPIApp**.
+2. "**Supported account types**", set this to "**Accounts in this organizational directory only (brandev-rpio only - Single tenant)**" and click "**Register**". You will be redirected to the app configuration page.
+3. Under the "**Overview**" section of the app, copy the "**Application (client) ID**" and save it somewhere for later user.
+4. Click on "**Authentication**" and under the "**Suggested Redirect URIs for public clients (mobile, desktop)**" select the checkbox next to https://login.microsoftonline.com/common/oauth2/nativeclient and click "**Save**".
+5. Move to "**API permissions**" and select "**Add a permissions**" and click on "**Microsoft Graph**" then choose "**Application permissions**".
+6. Select "**Mail Read**" and click "**Add permissions**".
+7. Finally, under "**Grant consent**", click "**Grant admin consent for contoso**" and click "**Yes**" to the prompt.
+8. To allow the PowerShell client to authenticate without a user present, we will use a client certificate. Using PowerShell, run the following and be sure to change the following.
+
+   - **`<FriendlyName>`** to something like "**GraphAPI Client Cert**". 
+   - **`<KeyDescription>`** to something like "**Used to access Microsoft Graph API**".
+   - **`<Subject>`** to your domain name, i.e., "**contoso.com**".
+
+ ```powershell
+  $cert = New-SelfSignedCertificate `
+         -CertStoreLocation cert:\currentuser\my `
+         -Provider "Microsoft Enhanced RSA and AES Cryptographic Provider" `
+         -KeyUsage DigitalSignature,DataEncipherment,KeyEncipherment `
+         -KeyAlgorithm RSA `
+         -KeyLength 2048 `
+         -Subject <Subject> `
+         -FriendlyName <FriendlyName> `
+         -KeyDescription <KeyDescription> `
+         -NotBefore (Get-Date).AddDays(-1) -NotAfter (Get-Date).AddYears(2);
+ ```  
+ 
+9. Copy and save the thumbprint for later use.
+
 ```powershell
-Coming soon...
-```
+ $cert.Thumbprint | clip
+ ```
 
-#### Create a self-signed client certificate
-Create a self-signed client certificate and upload it to the App Registration. 
-https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
+10. Export the certificate and upload it to the app from the "**Certificates & secrets**" page.
 
 ```powershell
-New-GraphAPICertificate -Subject contoso.com -FriendlyName "Graph API Client Cert" -Description "Used to access Graph API" -ExportLocation "c:\temp\"
-```
-
+ Export-Certificate -Type CERT -Cert $cert -FilePath c:\temp\graphapi.cer;
+ ```
+More details on using certificates can be found here: https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials. 
 
 
 ## **Usage**
@@ -24,12 +49,13 @@ Download the repository and . source the POSHGraphHelpers.ps1 file.
 . c:\temp\POSHGraphHelpers.ps1
 ```
 
-**Create some variables.**
+**Using PowerShell, create some variables.**
+The **$ClientId** and the **$Thumbprint** should be set to the "**Application (client) ID**" and **Thumprint** you copied and saved earlier.
+
 ```powershell
 $TenantName = 'contoso.onmicrosoft.com'
 $ClientId = "49e13ad6-bb04-499b-b96b-90fc7858be54"
 $Thumbprint = 'EC7FC6004A651EE8BECF269A7A86163771C6C562'
-$ClientSecret = 'o:KhJyp5bvWq4[aDb=0K]5]ZbjsVV3o@'
 ```
 
 **Connect to Microsoft Graph API**
