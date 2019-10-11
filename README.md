@@ -43,7 +43,7 @@ $AccessToken = Get-AccessToken -TenantName $TenantName -ClientId $ClientId -Cert
 $uri = "https://graph.microsoft.com/v1.0/users/John@contoso.com"
 Invoke-GraphQuery -AccessToken $AccessToken -Uri $uri
 
-Method: GET | URI https://graph.microsoft.com/v1.0/users/brandon@returnpath.io | Found: 1
+Method: GET | URI https://graph.microsoft.com/v1.0/users/John@contoso.com | Found: 1
 
 
 @odata.context    : https://graph.microsoft.com/v1.0/$metadata#users/$entity
