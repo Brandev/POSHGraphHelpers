@@ -103,8 +103,6 @@ function Get-AccessToken {
                 $Certificate = Get-ClientCertificate -Thumbprint $CertificateThumbprint;
                 $clientCredential = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientAssertionCertificate($ClientId, $Certificate); 
                 $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential).Result;
-
-                return $authResult
             }
             "ClientSecret" {
                 $clientCredential = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential($ClientId, $ClientSecret); 
