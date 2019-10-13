@@ -3,8 +3,8 @@
 ## **App Registration & Configuration**
 https://docs.microsoft.com/en-us/graph/auth-register-app-v2
 
-1. Provide a name for the application. I used **GraphAPIApp**.
-2. "**Supported account types**", set this to "**Accounts in this organizational directory only (brandev-rpio only - Single tenant)**" and click "**Register**". You will be redirected to the app configuration page.
+1. Provide a name for the application. I used "**GraphAPIApp**".
+2. "**Supported account types**", set this to "**Accounts in this organizational directory only (contoso only - Single tenant)**" and click "**Register**". You will be redirected to the app configuration page.
 3. Under the "**Overview**" section of the app, copy the "**Application (client) ID**" and save it somewhere for later use.
 4. Click on "**Authentication**" and under the "**Suggested Redirect URIs for public clients (mobile, desktop)**" select the checkbox next to https://login.microsoftonline.com/common/oauth2/nativeclient and click "**Save**".
 5. Move to "**API permissions**" and select "**Add a permissions**" and click on "**Microsoft Graph**" then choose "**Application permissions**".
