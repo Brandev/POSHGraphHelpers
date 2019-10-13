@@ -102,11 +102,23 @@ function Get-AccessToken {
             "CertificateThumbprint" {
                 $Certificate = Get-ClientCertificate -Thumbprint $CertificateThumbprint;
                 $clientCredential = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientAssertionCertificate($ClientId, $Certificate); 
-                $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential).Result;
+                $response = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential);
+				
+				if($response.Status -eq 'Faulted'){
+                    $e = [System.Exception]::new($response.Exception)
+                    throw $e;
+                }
+                $authResult = $response.Result;
             }
             "ClientSecret" {
                 $clientCredential = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential($ClientId, $ClientSecret); 
-                $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential).Result;
+                $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential);
+
+                if($response.Status -eq 'Faulted'){
+                    $e = [System.Exception]::new($response.Exception)
+                    throw $e.ToString();
+                }
+                $authResult = $response.Result;
             }
         }
 
