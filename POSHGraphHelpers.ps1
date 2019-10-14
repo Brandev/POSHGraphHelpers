@@ -2,28 +2,22 @@ function Get-ClientCertificate {
     <#
 	.SYNOPSIS
     Retreives a client certificate from the user certificate store that can be used to authenticate against Azure AD.
-	
-    .PARAMETER Thumbprint
-    The client certificate thumbprint of the certificate.
-    
+    Ensure the thumbprint for the certificate is set in the config file.
+
     .EXAMPLE
-    $Certificate = Get-ClientCertificate -Thumbprint 'EC7FC6004A651EE8BECF269A7A86163771C6C562';
+    $Certificate = Get-ClientCertificate;
     #>
-    [CmdletBinding(DefaultParameterSetName = 'Thumbprint')]
-    param
-    (
-        [Parameter(ParameterSetName = 'Thumbprint', Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-        [string]$Thumbprint
-    )
-    $results = Get-ChildItem Cert:\CurrentUser\my | ? { $_.Thumbprint -eq $Thumbprint }; 
+    $results = Get-ChildItem Cert:\CurrentUser\my | Where-Object { $_.Thumbprint -eq $script:GraphAPICerThumbprint }; 
     return $results
 }
 function Set-Deps {
     <#
 	.SYNOPSIS
-    Load the Active Directory Authentication Library (ADAL) to allow for authenticatication against Azure AD.    
+    Load the Active Directory Authentication Library (ADAL) to allow for authenticatication against Azure AD.  
+    Validate the configuration file is populated and loaded  
     #>
     try {
+        $isValid = $false;
         $AadModule = Get-Module -Name "AzureAD*" -ListAvailable -ErrorAction:SilentlyContinue;
         if (!$AadModule) {
             { Install-Module AzureAD }
@@ -31,12 +25,26 @@ function Set-Deps {
         }
     
         if ($AadModule.count -gt 1) {
-            $Latest_Version = ($AadModule | select version | Sort-Object)[-1]
+            $Latest_Version = ($AadModule | Select-Object version | Sort-Object)[-1]
             $AadModule = $AadModule | ? { $_.version -eq $Latest_Version.version }      
         }
         $AadModuleLib = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll";
         Import-Module $AadModuleLib;
-        return $true;
+
+        $config = Get-Content .\POSHGraphHelpersConfig.json | ConvertFrom-Json;
+        $script:GraphAPITenant = $config.TenantName;
+        $script:GraphAPIClientId = $config.ClientId;
+        $script:GraphAPIClientSecret = $config.ClientSecret;
+        $script:GraphAPICerThumbprint =  $config.Thumbprint;
+
+        $isValid = (
+            ($script:GraphAPITenant.Length -gt 10) -or `
+            ($script:GraphAPIClientId.Length -gt 10) -or `
+            ($script:GraphAPIClientSecret.Length -gt 10) -or `
+            ($script:GraphAPICerThumbprint.Length -gt 10)           
+            )
+
+        return $isValid;
     }
     catch {
         return $false;
@@ -47,94 +55,81 @@ function Get-AccessToken {
     <#
 	.SYNOPSIS
     Uses the Active Directory Authentication Library (ADAL) to authenticate against Azure AD.    
-	
-    .PARAMETER TenantName
-    The name of the tenant. i.e., contoso.onmicrosoft.com or contoso.com
-
-    .PARAMETER ClientId
-    The ClientId of the app registered in Azure AD.
 
     .PARAMETER ClientSecret
-    The client secret for the app registered in Azure AD.
+    Switch to indicate the use of the client secret, set in the config file, to authenticate.
 
-    .PARAMETER CertificateThumbprint
-    The client certificate thumbprint of the app registered in Azure AD.
+    .PARAMETER Certificate
+    Switch to indicate the use of the client certificate, located in the user certificate store to authenticate. 
+    Ensure the thumbprint for the certificate is set in the config file.
 
     .EXAMPLE
-    $AccessToken = Get-AccessToken -Tenant $TenantName -ClientId $ClientId -ClientSecret 'qkDwDJlDfig2IpeuUZYKH1Wb8q1V0ju6sILxQQqhJ+s'
-    $AccessToken = Get-AccessToken -Tenant $TenantName -ClientId $ClientId -Certificate 'EC7FC6004A651EE8BECF269A7A86163771C6C562'
+    Get-AccessToken -ClientSecret
+    Get-AccessToken -Certificate
+    $GraphAPIAccessToken
     #>
     [CmdletBinding()]
     param
     (
         [Parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
-        [Parameter(Mandatory = $true, ParameterSetName = "CertificateThumbprint")]
-        [string]$TenantName,
-        
-        [Parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
-        [Parameter(Mandatory = $true, ParameterSetName = "CertificateThumbprint")]
-        [System.Guid]$ClientID,
+        [switch]$ClientSecret,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
-        [string]$ClientSecret,
-
-        [Parameter(Mandatory = $true, ParameterSetName = "CertificateThumbprint")]
-        [string]$CertificateThumbprint
+        [Parameter(Mandatory = $true, ParameterSetName = "Certificate")]
+        [switch]$Certificate
     )
-    
     try {
-
         if (!(Set-Deps)) {
             throw "Unable to load authentication libraries."
         }
-
         $resourceAppIdURI = "https://graph.microsoft.com";
  
-        $authority = " https://login.microsoftonline.com/$TenantName/oauth2/token";      
+        $authority = " https://login.microsoftonline.com/$GraphAPITenant/oauth2/token";      
 
         $clientCredential = $null;
 
         $authContext = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext($authority);
         
-        $authResult = $null;
+        $authContext.TokenCache.Clear();
+
+        $script:GraphAPIAccessToken = $null;
 
         switch ($PSCmdlet.ParameterSetName) {
-            "CertificateThumbprint" {
-                $Certificate = Get-ClientCertificate -Thumbprint $CertificateThumbprint;
-                $clientCredential = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientAssertionCertificate($ClientId, $Certificate); 
-                $response = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential);
-				
-				if($response.Status -eq 'Faulted'){
-                    $e = [System.Exception]::new($response.Exception)
+            "Certificate" {
+                $ClientCertificate = Get-ClientCertificate -Thumbprint $script:GraphAPICerThumbprint;
+                $clientCredential = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientAssertionCertificate($script:GraphAPIClientId, $ClientCertificate); 
+                $response = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential).GetAwaiter().GetResult();
+               
+				if($response.IsFaulted){
+                    $e = [System.Exception]::new($response.Exception);
                     throw $e;
                 }
-                $authResult = $response.Result;
+                $script:GraphAPIAccessToken = $response;
             }
             "ClientSecret" {
-                $clientCredential = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential($ClientId, $ClientSecret); 
-                $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential);
+                $clientCredential = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential($script:GraphAPIClientId, $script:GraphAPIClientSecret); 
+                $response = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientcredential).GetAwaiter().GetResult();
 
-                if($response.Status -eq 'Faulted'){
+                if($response.IsFaulted){
                     $e = [System.Exception]::new($response.Exception)
                     throw $e.ToString();
                 }
-                $authResult = $response.Result;
+                $script:GraphAPIAccessToken = $response;
             }
         }
 
-        return $authResult
+       Write-Host "`r`nSuccess!`r`n" -ForegroundColor Green;
+       Write-Host "Use the " -NoNewline;
+       Write-Host "`$GraphAPIAccessToken " -ForegroundColor Cyan -NoNewline;
+       Write-Host "variable to view the access token details.`r`n"
     }
     catch {
-        Write-Error $_.Exception
+        Write-Error $_
     }
 }
 function Invoke-GraphQuery {
     <#
 	.SYNOPSIS
     Helper function to make API calls against Microsoft Graph API.
-	
-    .PARAMETER AccessToken
-    The AccessToken aquired when authenticated using the Get-AccessToken function.
 
     .PARAMETER URI
     The API URL.
@@ -144,13 +139,11 @@ function Invoke-GraphQuery {
 
     .EXAMPLE
     $uri = "https://graph.microsoft.com/beta/reports/getEmailActivityUserDetail(period='D7')?`$format=application/json"
-    $activity = Invoke-GraphQuery -AccessToken $AccessToken -Uri $uri 
+    $activity = Invoke-GraphQuery -Uri $uri 
     $activity
     #>
     param
-    (          
-        [Parameter(Mandatory = $true)]
-        $AccessToken,
+    (
         [Parameter(Mandatory = $true)]
         $URI,
         [Parameter(Mandatory = $false)]
@@ -159,7 +152,7 @@ function Invoke-GraphQuery {
         
     Write-Progress -Id 1 -Activity "Executing query: $uri" -CurrentOperation "Invoking MS Graph API";
 
-    $Header = @{ 'Content-Type' = 'application\json'; 'Authorization' = $AccessToken.CreateAuthorizationHeader() }
+    $Header = @{ 'Content-Type' = 'application\json'; 'Authorization' = $script:GraphAPIAccessToken.CreateAuthorizationHeader() }
 
     $QueryResults = @()
     if ($Method -eq "Get") {
@@ -175,3 +168,11 @@ function Invoke-GraphQuery {
     Write-Progress -Id 1 -Activity "Executing query: $Uri" -Completed
     Return $QueryResults
 }
+
+if(!(Test-Path .\POSHGraphHelpersConfig.json)){
+    Write-Error "Configuration file, POSHGraphHelpersConfig.json, is missing. Ensure the configuration file is present in the same directory as the script and retry."
+}
+$script:GraphAPITenant = $null;
+$script:GraphAPIClientId = $null;
+$script:GraphAPIClientSecret = $null;
+$script:GraphAPICerThumbprint = $null;

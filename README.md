@@ -1,7 +1,6 @@
 # PowerShell Helper for Microsoft Graph API 
 
-## **App Registration & Configuration**
-https://docs.microsoft.com/en-us/graph/auth-register-app-v2
+## **App Registration & Azure Configuration**
 
 1. Provide a name for the application. I used "**GraphAPIApp**".
 2. "**Supported account types**", set this to "**Accounts in this organizational directory only (contoso only - Single tenant)**" and click "**Register**". You will be redirected to the app configuration page.
@@ -27,47 +26,49 @@ https://docs.microsoft.com/en-us/graph/auth-register-app-v2
          -FriendlyName <FriendlyName> `
          -KeyDescription <KeyDescription> `
          -NotBefore (Get-Date).AddDays(-1) -NotAfter (Get-Date).AddYears(2);
- ```  
- 
+ ```
 9. Copy and save the thumbprint for later use.
 
 ```powershell
  $cert.Thumbprint | clip
  ```
-
 10. Export the certificate and upload it to the app using the "**Upload certificate**" button from the "**Certificates & secrets**" page.
-
 ```powershell
  Export-Certificate -Type CERT -Cert $cert -FilePath c:\temp\graphapi.cer;
  ```
-More details on using certificates can be found here: https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials. 
+</br>
 
+More details on using certificates can be found here: https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials.
+
+More details on the App Registration process can be found here: https://docs.microsoft.com/en-us/graph/auth-register-app-v2
+</br>
 
 ## **Usage**
-Download the repository and . source the POSHGraphHelpers.ps1 file.
+**Client Setup**
+1. Download the repository then extract the "**POSHGraphHelpers.ps1**" and "**POSHGraphHelpersConfig.json**" files to your working directory.
+2. Edit the "**POSHGraphHelpersConfig.json**" file and set the values accordingly. Note the "**ClientId**" is the "**Application (client) ID**" you copied earlier. The "**Thumbprint**" is the **Thumprint** you copied and saved earlier.
+3. Finally, . source the "**POSHGraphHelpers.ps1**" file.
+
 ```powershell
 . c:\temp\POSHGraphHelpers.ps1
 ```
-
-**Using PowerShell, create some variables.**
-The **$ClientId** and the **$Thumbprint** should be set to the "**Application (client) ID**" and **Thumprint** you copied and saved earlier.
-
-```powershell
-$TenantName = 'contoso.onmicrosoft.com'
-$ClientId = "49e13ad6-bb04-499b-b96b-90fc7858be54"
-$Thumbprint = 'EC7FC6004A651EE8BECF269A7A86163771C6C562'
-```
+</br>
 
 **Connect to Microsoft Graph API**
 ```powershell
-$AccessToken = $null
-$AccessToken = Get-AccessToken -TenantName $TenantName -ClientId $ClientId -CertificateThumbprint $Thumbprint
+Get-AccessToken -Certificate
+
+Success!
+
+Use the $GraphAPIAccessToken variable to view the access token details.
+
 ```
+</br>
 
 **Use the API by passing the Invoke-GraphQuery function a URL.**
 ```powershell
 $uri = "https://graph.microsoft.com/v1.0/users/John@contoso.com"
-Invoke-GraphQuery -AccessToken $AccessToken -Uri $uri
+Invoke-GraphQuery -Uri $uri
 
 Method: GET | URI https://graph.microsoft.com/v1.0/users/John@contoso.com | Found: 1
 
@@ -85,5 +86,3 @@ surname           :
 userPrincipalName : John@contoso.com
 id                : 48d9c121-bb2c-402b-bedf-612296500d2e
 ```
-
-## **More samples to come...**
