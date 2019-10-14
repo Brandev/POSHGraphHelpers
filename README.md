@@ -54,7 +54,8 @@ More details on the App Registration process can be found here: https://docs.mic
 ```
 </br>
 
-**Connect to Microsoft Graph API**
+**Connect to Microsoft Graph API** 
+
 If everything is setup correctly, you will get a valid access token.
 ```powershell
 Get-AccessToken -Certificate
