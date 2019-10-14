@@ -47,7 +47,7 @@ More details on the App Registration process can be found here: https://docs.mic
 **Client Setup**
 1. Download the repository then extract the "**POSHGraphHelpers.ps1**" and "**POSHGraphHelpersConfig.json**" files to your working directory.
 2. Edit the "**POSHGraphHelpersConfig.json**" file and set the values accordingly. Note the "**ClientId**" is the "**Application (client) ID**" you copied earlier. The "**Thumbprint**" is the **Thumprint** you copied and saved earlier.
-3. Finally, . source the "**POSHGraphHelpers.ps1**" file.
+3. Finally, dot(.) source the "**POSHGraphHelpers.ps1**" file like so.
 
 ```powershell
 . c:\temp\POSHGraphHelpers.ps1
@@ -55,6 +55,7 @@ More details on the App Registration process can be found here: https://docs.mic
 </br>
 
 **Connect to Microsoft Graph API**
+If everything is setup correctly, you will get a valid access token.
 ```powershell
 Get-AccessToken -Certificate
 
