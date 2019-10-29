@@ -68,7 +68,7 @@ function Get-AccessToken {
     Get-AccessToken -Certificate
     $GraphAPIAccessToken
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "Certificate")]
     param
     (
         [Parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
@@ -150,6 +150,7 @@ function Invoke-GraphQuery {
         $Method = "GET"
     )
         
+ try {
     Write-Progress -Id 1 -Activity "Executing query: $uri" -CurrentOperation "Invoking MS Graph API";
 
     $Header = @{ 'Content-Type' = 'application\json'; 'Authorization' = $script:GraphAPIAccessToken.CreateAuthorizationHeader() }
@@ -159,14 +160,17 @@ function Invoke-GraphQuery {
         do {
             $Results = Invoke-RestMethod -Headers $Header -Uri $uri -UseBasicParsing -Method $Method -ContentType "application/json"
             if ($null -ne ($Results.value)) { $QueryResults += $Results.value }
-            else { $QueryResults += $Results }
-            write-host "Method: $Method | URI $Uri | Found:" ($QueryResults).Count
+            else { $QueryResults += $Results }          
             $uri = $Results.'@odata.nextlink'
         }until (!($uri))
     }
    
     Write-Progress -Id 1 -Activity "Executing query: $Uri" -Completed
     Return $QueryResults
+ }
+ catch {
+     
+ }
 }
 
 if(!(Test-Path .\POSHGraphHelpersConfig.json)){
