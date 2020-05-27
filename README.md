@@ -44,50 +44,47 @@ More details on the App Registration process can be found here: https://docs.mic
 </br>
 
 ## **Usage**
-Using the Microsoft Graph PowerShell SDK 
+**Client Setup**
+1. Download the repository then extract the "**POSHGraphHelpers.ps1**" and "**POSHGraphHelpersConfig.json**" files to your working directory.
+2. Edit the "**POSHGraphHelpersConfig.json**" file and set the values accordingly. Note the "**ClientId**" is the "**Application (client) ID**" you copied earlier. The "**Thumbprint**" is the **Thumprint** you copied and saved earlier.
+3. Finally, dot(.) source the "**POSHGraphHelpers.ps1**" file like so.
 
-https://github.com/microsoftgraph/msgraph-sdk-powershell
-
+```powershell
+. c:\temp\POSHGraphHelpers.ps1
+```
 </br>
 
-1. First, install the module.
+**Connect to Microsoft Graph API** 
 
-    ```powershell
-    if(!(Get-PSRepository GraphPowerShell -ErrorAction:SilentlyContinue)){
-        Register-PSRepository -Name GraphPowerShell -SourceLocation 'https://graphpowershellrepository.azurewebsites.net/nuget' -InstallationPolicy Trusted
-    }
-    
-    if(!(Get-Module GraphPowerShell -ListAvailable -ErrorAction:SilentlyContinue)){
-        Install-module Microsoft.Graph.Beta -Repository GraphPowerShell
-    }
-    ```
+If everything is setup correctly, you will get a valid access token.
+```powershell
+Get-AccessToken -Certificate
+
+Success!
+
+Use the $GraphAPIAccessToken variable to view the access token details.
+
+```
 </br>
 
-2. Next, you can use either a json config file or a configuration object to host the TenantId, ClientId and Certificate Thumbprint.
+**Use the API by passing the Invoke-GraphQuery function a URL.**
+```powershell
+$uri = "https://graph.microsoft.com/v1.0/users/John@contoso.com"
+Invoke-GraphQuery -Uri $uri
 
-    a. If using a json config file...
-    
-    ```powershell
-    $config = Get-Content .\config\clientconfiguration.json -Raw | ConvertFrom-Json
-    ```
-    
-    b. If using an object...
-    ```powershell
-    $config = [PSCustomObject]@{
-        TenantId = 'ae5a8e02-eac1-4e89-8991-f446d532347f'
-        ClientId = '49a4017d-87d6-4fc9-9e5c-63091de4838f'
-        Thumbprint = '67F597273BB23D345987D1B1F5D79682B1DA2C2B'
-    }
-    ```
-</br>
+Method: GET | URI https://graph.microsoft.com/v1.0/users/John@contoso.com | Found: 1
 
-3. Connect
-    ```powershell
-    Connect-Graph -ClientId $config.ClientId -TenantId $config.TenantId -CertificateThumbprint $config.Thumbprint
-    ```
-</br>
 
-4. Verify
-    ```powershell
-    Get-User -UserId brandon@contoso.com
-    ```
+@odata.context    : https://graph.microsoft.com/v1.0/$metadata#users/$entity
+businessPhones    : {}
+displayName       : John
+givenName         : John
+jobTitle          :
+mail              : John@contoso.com
+mobilePhone       :
+officeLocation    :
+preferredLanguage :
+surname           :
+userPrincipalName : John@contoso.com
+id                : 48d9c121-bb2c-402b-bedf-612296500d2e
+```

@@ -1,7 +1,7 @@
 {
     "Description": "PowerShell Helper for Microsoft Graph API",
-    "TenantName": "contoso.onmicrosoft.com",
-    "ClientId": "5d137bd8-d6b3-40eb-b305-3d7626e91b2e",
+    "TenantName": "brndv.onmicrosoft.com",
+    "ClientId": "3e300291-29ef-4cc1-98b8-824b8816ed85",
     "ClientSecret": "2Y@Twi0ah1qrst9NHjS+[@rVsqse?i[H",
-    "Thumbprint": "EC7FC6004A651E3890785269A7A86163771C6C562"
+    "Thumbprint": "EC7FC6004A651EE8BECF269A7A86163771C6C562"
 }
