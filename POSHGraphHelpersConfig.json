@@ -1,7 +1,7 @@
 {
-"Description": "PowerShell Helper for Microsoft Graph API",
-"TenantName": "contoso.onmicrosoft.com",
-"ClientId": "5d137bd8-d6b3-40eb-b305-3d7626e91b2e",
-"ClientSecret": "2Y@Twi0ah1qrst9NHjS+[@rVsqse?i[H",
-"Thumbprint": "EC7FC6004A651E3890785269A7A86163771C6C562"
+    "Description": "PowerShell Helper for Microsoft Graph API",
+    "TenantName": "contoso.onmicrosoft.com",
+    "ClientId": "5d137bd8-d6b3-40eb-b305-3d7626e91b2e",
+    "ClientSecret": "2Y@Twi0ah1qrst9NHjS+[@rVsqse?i[H",
+    "Thumbprint": "EC7FC6004A651E3890785269A7A86163771C6C562"
 }
